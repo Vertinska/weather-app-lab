@@ -2,48 +2,39 @@ package logger
 
 import (
     "fmt"
-    "log"
-    "os"
+    "time"
 )
 
-type MyLogger struct {
-    infoLogger  *log.Logger
-    debugLogger *log.Logger
-    errorLogger *log.Logger
-    debugMode   bool
+var (
+    INFO  = "INFO"
+    DEBUG = "DEBUG"
+    ERROR = "ERROR"
+)
+
+type logger struct{}
+
+func New() *logger {
+    return &logger{}
 }
 
-func New(debugMode bool) *MyLogger {
-    return &MyLogger{
-        infoLogger:  log.New(os.Stdout, "📢 INFO: ", log.Ldate|log.Ltime),
-        debugLogger: log.New(os.Stdout, "🔍 DEBUG: ", log.Ldate|log.Ltime),
-        errorLogger: log.New(os.Stderr, "❌ ERROR: ", log.Ldate|log.Ltime),
-        debugMode:   debugMode,
-    }
+func (l *logger) Info(msg string) {
+    fmt.Println(l.msg(INFO, msg))
 }
 
-func (l *MyLogger) Info(msg string) {
-    l.infoLogger.Println(msg)
+func (l *logger) Debug(msg string) {
+    fmt.Println(l.msg(DEBUG, msg))
 }
 
-func (l *MyLogger) Debug(msg string) {
-    if l.debugMode {
-        l.debugLogger.Println(msg)
-    }
+func (l *logger) Error(msg string, err error) {
+    fmt.Println(l.msg(ERROR, msg+" err - "+err.Error()))
 }
 
-func (l *MyLogger) Error(msg string) {
-    l.errorLogger.Println(msg)
-}
-
-func (l *MyLogger) Infof(format string, args ...interface{}) {
-    l.Info(fmt.Sprintf(format, args...))
-}
-
-func (l *MyLogger) Debugf(format string, args ...interface{}) {
-    l.Debug(fmt.Sprintf(format, args...))
-}
-
-func (l *MyLogger) Errorf(format string, args ...interface{}) {
-    l.Error(fmt.Sprintf(format, args...))
+func (l *logger) msg(level string, msg string) string {
+    timeStr := time.Now().Format(time.RFC3339)
+    return fmt.Sprintf(
+        "[%s] %s, message - %s",
+        level,
+        timeStr,
+        msg,
+    )
 }
