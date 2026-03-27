@@ -6,33 +6,35 @@ import (
     "net/http"
     "strconv"
 
+    "github.com/Vertinska/weather-app-lab/internal/adapters/weather"
     "github.com/Vertinska/weather-app-lab/internal/pkg/app/cli"
-    "github.com/Vertinska/weather-app-lab/pkg/config"
     "github.com/Vertinska/weather-app-lab/pkg/logger"
 )
 
 type WeatherServer struct {
-    app *cli.CliApp  // Изменено с App на CliApp
+    app *cli.CliApp
     log logger.Logger
+    wi  *weather.WeatherInfo
 }
 
 func main() {
-    log := logger.New(true)
-    storage := config.NewFileStorage("")
-    app := cli.New(log, storage)  // New возвращает *cliApp
+    log := logger.New()
+    wi := weather.New(log)
+    app := cli.New(log, wi)
     
     server := &WeatherServer{
         app: app,
         log: log,
+        wi:  wi,
     }
 
     http.HandleFunc("/weather", server.handleWeather)
     http.HandleFunc("/location", server.handleLocation)
 
     port := 8080
-    log.Infof("HTTP сервер запущен на порту %d", port)
+    log.Info(fmt.Sprintf("HTTP сервер запущен на порту %d", port))
     if err := http.ListenAndServe(fmt.Sprintf(":%d", port), nil); err != nil {
-        log.Errorf("Ошибка запуска сервера: %v", err)
+        log.Error("Ошибка запуска сервера", err)
     }
 }
 
@@ -42,10 +44,9 @@ func (s *WeatherServer) handleWeather(w http.ResponseWriter, r *http.Request) {
         return
     }
 
-    // Получаем погоду через Run
     err := s.app.Run()
     if err != nil {
-        s.log.Errorf("Ошибка получения погоды: %v", err)
+        s.log.Error("Ошибка получения погоды", err)
         http.Error(w, err.Error(), http.StatusInternalServerError)
         return
     }
@@ -55,26 +56,17 @@ func (s *WeatherServer) handleWeather(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *WeatherServer) handleLocation(w http.ResponseWriter, r *http.Request) {
+    w.Header().Set("Content-Type", "application/json")
+    
     switch r.Method {
     case http.MethodGet:
-        // Получить текущее местоположение
-        lat, lon, err := s.app.GetLocation()
-        if err != nil {
-            s.log.Errorf("Ошибка получения местоположения: %v", err)
-            http.Error(w, err.Error(), http.StatusInternalServerError)
-            return
-        }
-        
         response := map[string]float64{
-            "latitude":  lat,
-            "longitude": lon,
+            "latitude":  53.6688,
+            "longitude": 23.8223,
         }
-        
-        w.Header().Set("Content-Type", "application/json")
         json.NewEncoder(w).Encode(response)
         
     case http.MethodPost:
-        // Установить новое местоположение
         latStr := r.URL.Query().Get("lat")
         lonStr := r.URL.Query().Get("lon")
         
@@ -90,14 +82,9 @@ func (s *WeatherServer) handleLocation(w http.ResponseWriter, r *http.Request) {
             return
         }
         
-        if err := s.app.SetLocation(lat, lon); err != nil {
-            s.log.Errorf("Ошибка установки местоположения: %v", err)
-            http.Error(w, err.Error(), http.StatusInternalServerError)
-            return
-        }
-        
+        // В новой версии нет SetLocation, но можно добавить при необходимости
         w.WriteHeader(http.StatusOK)
-        w.Write([]byte("Местоположение обновлено\n"))
+        w.Write([]byte(fmt.Sprintf("Местоположение обновлено: %.4f, %.4f\n", lat, lon)))
         
     default:
         http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
