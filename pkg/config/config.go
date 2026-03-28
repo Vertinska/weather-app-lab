@@ -1,41 +1,32 @@
 package config
 
 import (
-    "encoding/json"
-    "os"
+    "io"
+    "gopkg.in/yaml.v3"
 )
 
+type ConfigFile struct {
+    C Config `yaml:"service"`
+}
+
+type Provider struct {
+    Type string `yaml:"type"`
+}
+
+type Location struct {
+    Lat  float64 `yaml:"lat"`
+    Long float64 `yaml:"long"`
+}
+
 type Config struct {
-    StorageType string `json:"storage_type"`
-    FilePath    string `json:"file_path,omitempty"`
+    P Provider `yaml:"provider"`
+    L Location `yaml:"location"`
 }
 
-func LoadConfig(path string) (*Config, error) {
-    // Если файла нет, создаем конфиг по умолчанию
-    data, err := os.ReadFile(path)
-    if err != nil {
-        if os.IsNotExist(err) {
-            return &Config{
-                StorageType: "file",
-                FilePath:    "",
-            }, nil
-        }
-        return nil, err
+func Parse(r io.Reader) (Config, error) {
+    var c ConfigFile
+    if err := yaml.NewDecoder(r).Decode(&c); err != nil {
+        return Config{}, err
     }
-    
-    var config Config
-    if err := json.Unmarshal(data, &config); err != nil {
-        return nil, err
-    }
-    
-    return &config, nil
-}
-
-func (c *Config) Save(path string) error {
-    data, err := json.MarshalIndent(c, "", "  ")
-    if err != nil {
-        return err
-    }
-    
-    return os.WriteFile(path, data, 0644)
+    return c.C, nil
 }

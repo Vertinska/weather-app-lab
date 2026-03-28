@@ -1,4 +1,4 @@
-.PHONY: run run-debug run-http run-gui build clean
+.PHONY: run run-debug build clean
 
 run:
 	go run ./cmd/linux/cli/main.go
@@ -19,11 +19,3 @@ build:
 
 clean:
 	rm -rf build/*
-
-# Команды для управления местоположением
-set-location:
-	go run ./cmd/linux/cli/main.go -set-location=$(LAT),$(LON)
-
-# Команда для установки координат Гродно
-set-grodno:
-	go run ./cmd/linux/cli/main.go -set-location=53.6688,23.8223

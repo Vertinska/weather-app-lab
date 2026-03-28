@@ -4,12 +4,16 @@ import (
     "fmt"
     
     "github.com/Vertinska/weather-app-lab/internal/domain/models"
+    "github.com/Vertinska/weather-app-lab/pkg/config"
 )
 
 type Logger interface {
     Info(string)
     Debug(string)
     Error(string, error)
+    Infof(string, ...interface{})
+    Debugf(string, ...interface{})
+    Errorf(string, ...interface{})
 }
 
 type WeatherInfo interface {
@@ -17,21 +21,23 @@ type WeatherInfo interface {
 }
 
 type CliApp struct {
-    l  Logger
-    wi WeatherInfo
+    l      Logger
+    wi     WeatherInfo
+    cfg    config.Config
 }
 
-func New(l Logger, wi WeatherInfo) *CliApp {
+func New(l Logger, wi WeatherInfo, cfg config.Config) *CliApp {
     return &CliApp{
-        l:  l,
-        wi: wi,
+        l:   l,
+        wi:  wi,
+        cfg: cfg,
     }
 }
 
 func (c *CliApp) Run() error {
-    // Координаты Гродно
-    latitude := 53.6688
-    longitude := 23.8223
+    // Используем координаты из конфигурации
+    latitude := c.cfg.L.Lat
+    longitude := c.cfg.L.Long
     
     temp := c.wi.GetTemperature(latitude, longitude)
     
@@ -42,12 +48,12 @@ func (c *CliApp) Run() error {
     return nil
 }
 
-// Дополнительные методы для совместимости с предыдущими версиями
+// Дополнительные методы для совместимости
 func (c *CliApp) SetLocation(lat, lon float64) error {
-    c.l.Debug(fmt.Sprintf("SetLocation called with: %.4f, %.4f", lat, lon))
+    c.l.Debugf("SetLocation called with: %.4f, %.4f", lat, lon)
     return nil
 }
 
 func (c *CliApp) GetLocation() (float64, float64, error) {
-    return 53.6688, 23.8223, nil
+    return c.cfg.L.Lat, c.cfg.L.Long, nil
 }
