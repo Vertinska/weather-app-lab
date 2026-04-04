@@ -2,7 +2,9 @@ package main
 
 import (
     "os"
+    "time"
 
+    pogodaby "github.com/Vertinska/weather-app-lab/internal/adapters/pogoda_by"
     "github.com/Vertinska/weather-app-lab/internal/adapters/weather"
     "github.com/Vertinska/weather-app-lab/internal/pkg/app/cli"
     "github.com/Vertinska/weather-app-lab/internal/pkg/flags"
@@ -11,17 +13,14 @@ import (
 )
 
 func main() {
-    // Парсим флаги командной строки
     arguments := flags.Parse()
     
-    // Создаем логгер с учетом debug режима
     l := logger.New(arguments.Debug)
     
     if arguments.Debug {
         l.Debug("Debug mode enabled")
     }
     
-    // Открываем и парсим конфигурационный файл
     r, err := os.Open(arguments.Path)
     if err != nil {
         l.Errorf("Failed to open config file: %v", err)
@@ -37,14 +36,12 @@ func main() {
     
     l.Debugf("Config loaded successfully")
     l.Debugf("Using coordinates: %.4f, %.4f", cfg.L.Lat, cfg.L.Long)
+    l.Debugf("Provider type: %s", cfg.P.Type)
+    l.Debugf("Cache TTL: %d seconds", cfg.P.CacheTTL)
     
-    // Получаем провайдера погоды
     wi := getProvider(cfg, l)
-    
-    // Создаем приложение
     app := cli.New(l, wi, cfg)
     
-    // Запускаем
     err = app.Run()
     if err != nil {
         l.Error("Some error", err)
@@ -59,9 +56,12 @@ func getProvider(cfg config.Config, l cli.Logger) cli.WeatherInfo {
     
     switch cfg.P.Type {
     case "open-meteo":
-        wi = weather.New(l)
+        ttl := time.Duration(cfg.P.CacheTTL) * time.Second
+        wi = weather.NewWithCacheTTL(l, ttl)
+    case "pogoda":
+        wi = pogodaby.New(l)
     default:
-        wi = weather.New(l)
+        wi = weather.NewWithCacheTTL(l, 10*time.Minute)
     }
     
     return wi

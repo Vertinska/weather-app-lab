@@ -17,43 +17,41 @@ type Logger interface {
 }
 
 type WeatherInfo interface {
-    GetTemperature(float64, float64) models.TempInfo
+    GetTemperature(float64, float64) (models.TempInfo, error)
 }
 
 type CliApp struct {
-    l      Logger
-    wi     WeatherInfo
-    cfg    config.Config
+    l    Logger
+    wi   WeatherInfo
+    conf config.Config
 }
 
-func New(l Logger, wi WeatherInfo, cfg config.Config) *CliApp {
+func New(l Logger, wi WeatherInfo, c config.Config) *CliApp {
     return &CliApp{
-        l:   l,
-        wi:  wi,
-        cfg: cfg,
+        l:    l,
+        wi:   wi,
+        conf: c,
     }
 }
 
 func (c *CliApp) Run() error {
-    // Используем координаты из конфигурации
-    latitude := c.cfg.L.Lat
-    longitude := c.cfg.L.Long
-    
-    temp := c.wi.GetTemperature(latitude, longitude)
-    
+    tempInfo, err := c.wi.GetTemperature(c.conf.L.Lat, c.conf.L.Long)
+    if err != nil {
+        c.l.Error("can't get temp info", err)
+        return err
+    }
     fmt.Printf(
         "Температура воздуха - %.2f градусов цельсия\n",
-        temp.Temp,
+        tempInfo.Temp,
     )
     return nil
 }
 
-// Дополнительные методы для совместимости
 func (c *CliApp) SetLocation(lat, lon float64) error {
     c.l.Debugf("SetLocation called with: %.4f, %.4f", lat, lon)
     return nil
 }
 
 func (c *CliApp) GetLocation() (float64, float64, error) {
-    return c.cfg.L.Lat, c.cfg.L.Long, nil
+    return c.conf.L.Lat, c.conf.L.Long, nil
 }

@@ -1,6 +1,7 @@
 service:
   provider:
-    type: open-meteo
+    type: pogoda
+    cache_ttl: 600
   location:
     lat: 53.6688
     long: 23.8223

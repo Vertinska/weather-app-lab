@@ -2,6 +2,7 @@ package config
 
 import (
     "io"
+    "os"
     "gopkg.in/yaml.v3"
 )
 
@@ -10,7 +11,8 @@ type ConfigFile struct {
 }
 
 type Provider struct {
-    Type string `yaml:"type"`
+    Type     string `yaml:"type"`
+    CacheTTL int    `yaml:"cache_ttl"`
 }
 
 type Location struct {
@@ -29,4 +31,13 @@ func Parse(r io.Reader) (Config, error) {
         return Config{}, err
     }
     return c.C, nil
+}
+
+func LoadConfigFromFile(path string) (Config, error) {
+    r, err := os.Open(path)
+    if err != nil {
+        return Config{}, err
+    }
+    defer r.Close()
+    return Parse(r)
 }
