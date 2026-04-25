@@ -1,0 +1,9 @@
+Package: weather-app
+Version: 1.0
+Section: utils
+Priority: optional
+Architecture: amd64
+Maintainer: Alena <helenavertin@gmail.com>
+Description: Weather application with CLI and HTTP
+ Приложение для получения погоды с поддержкой CLI и HTTP сервера
+Depends: libc6

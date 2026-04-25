@@ -1,0 +1,8 @@
+#!/bin/bash
+set -e
+
+# Удаляем симлинки
+rm -f /usr/local/bin/weather
+rm -f /usr/local/bin/weather-http
+
+exit 0

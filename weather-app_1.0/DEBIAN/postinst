@@ -1,0 +1,10 @@
+#!/bin/bash
+set -e
+
+# Создаем симлинки
+ln -sf /usr/local/bin/weather-app-cli /usr/local/bin/weather
+ln -sf /usr/local/bin/weather-app-http /usr/local/bin/weather-http
+
+echo "Weather App установлен!"
+echo "Запуск CLI: weather"
+echo "Запуск HTTP: weather-http"
